@@ -3,6 +3,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 /* =========================
    Config & Utilities
    ========================= */
+// 🟢 Enable or disable images globally
+const SHOW_IMAGES = false;
 const AU_PARAMS = "hl=en-AU&gl=AU&ceid=AU:en";
 const IS_DEV =
   typeof location !== "undefined" && location.hostname === "localhost";
@@ -464,7 +466,7 @@ function FeedColumn({ topic, pollMs = 60000, batchSize = 24 }) {
             target="_blank"
             rel="noopener noreferrer"
           >
-            {it.image && (
+            {SHOW_IMAGES && it.image && (
               <div className="thumb">
                 <img
                   src={it.image}
@@ -472,7 +474,6 @@ function FeedColumn({ topic, pollMs = 60000, batchSize = 24 }) {
                   loading="lazy"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
-                    // If the image fails to load, hide the thumb entirely
                     const thumb = e.currentTarget.closest(".thumb");
                     if (thumb) thumb.style.display = "none";
                   }}
