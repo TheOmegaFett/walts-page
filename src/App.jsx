@@ -1,0 +1,1 @@
+/* App.jsx content (trimmed for brevity) from previous message */
