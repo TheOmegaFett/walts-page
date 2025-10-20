@@ -1,4 +1,4 @@
-import { schedule } from "@netlify/functions";
+// netlify/functions/ingest.mjs
 import { getStore } from "@netlify/blobs";
 import { JSDOM } from "jsdom";
 
@@ -29,16 +29,16 @@ function parseItem(itemEl) {
   const link = g("link");
   const pubDate = g("pubDate");
   const source = itemEl.querySelector("source")?.textContent?.trim() || "";
-  let image = itemEl.querySelector("media\\:content")?.getAttribute("url") || "";
+  let image =
+    itemEl.querySelector("media\\:content")?.getAttribute("url") || "";
   if (!image) image = extractFromDesc(g("description")) || "";
-
   const ts = Date.parse(pubDate) || Date.now();
   return { title, link, pubDate, source, image, ts };
 }
 
 async function fetchRSS(url) {
   const res = await fetch(proxied(url));
-  if (!res.ok) throw new Error("RSS fetch failed");
+  if (!res.ok) throw new Error(`RSS fetch failed: ${res.status}`);
   const xml = await res.text();
   const doc = new JSDOM(xml, { contentType: "text/xml" }).window.document;
   const items = [...doc.querySelectorAll("item")].map(parseItem);
@@ -50,17 +50,17 @@ async function ingestTopic(store, topicKey, feed) {
   const key = `news:${topicKey}:v1`;
   const current = (await store.get(key, { type: "json" })) || [];
   const currentSet = new Set(current.map((x) => x.link));
-
   const incoming = await fetchRSS(feed);
   const fresh = incoming.filter((x) => x.link && !currentSet.has(x.link));
-
   if (!fresh.length) return { added: 0 };
   const merged = [...fresh, ...current].slice(0, 20000); // keep last 20k
   await store.setJSON(key, merged);
   return { added: fresh.length };
 }
 
-export const handler = schedule("*/1 * * * *", async () => {
+// This function is triggered by Netlify on the schedule below.
+// It is NOT meant to be called via browser URL in production.
+export default async (req, ctx) => {
   const store = await getStore({ name: "news-store" });
   const results = {};
   for (const [k, url] of Object.entries(TOPICS)) {
@@ -70,8 +70,11 @@ export const handler = schedule("*/1 * * * *", async () => {
       results[k] = { error: e.message };
     }
   }
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ ok: true, results }),
-  };
-});
+  // No response body is required for scheduled functions.
+  return new Response(null, { status: 204 });
+};
+
+// Modern scheduled-function style:
+export const config = {
+  schedule: "*/1 * * * *", // every minute; adjust as needed
+};
