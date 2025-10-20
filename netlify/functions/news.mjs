@@ -1,3 +1,4 @@
+// netlify/functions/news.mjs
 import { getStore } from "@netlify/blobs";
 
 export async function handler(event) {

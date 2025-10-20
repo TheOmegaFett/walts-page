@@ -1,34 +1,24 @@
-# Netlify Live News (UFOs • Financials • Trump • International Politics)
+# Netlify Live News (fixed) — UFOs • Financials • Trump • International Politics
 
-A React 3-column reader with **live updates** and **infinite scroll** backed by **Netlify Functions + Blobs**.
+React 3-column reader with **live updates**, **infinite scroll**, and a **persisted archive** via Netlify Functions + Blobs.
 
-- Ingests Google News RSS every minute (via Netlify **Scheduled Function**).
-- Stores articles per topic in **Netlify Blobs** (durable JSON).
-- Frontend paginates from `/.netlify/functions/news` and shows new items at the top.
+## What’s fixed
+- Uses **modern scheduled function** style for `ingest` (cron-only, not HTTP).
+- Adds **HTTP background trigger** at `/.netlify/functions/ingest-now-background` that returns **202** for manual/CI runs.
+- Shared ingestion code lives in `netlify/functions/_shared/ingest.js`.
 
 ## Deploy (Netlify)
+1. Push this folder to a Git repo.
+2. On Netlify: **New site from Git** → choose repo.
+3. Build command: `npm run build` — Publish directory: `dist`.
+4. After first deploy, either wait for the scheduled `ingest` (runs every minute) **or** hit:
+   - `https://<yoursite>.netlify.app/.netlify/functions/ingest-now-background` (returns 202)
 
-1. Create a new repository and push this folder.
-2. On Netlify: **New site from Git** → select repo.
-3. Build command: `npm run build`  
-   Publish directory: `dist`
-4. Deploy. Netlify will also run the scheduled `ingest` function every minute.
-
-## Local dev
-
+## Dev
 ```bash
 npm install
 npm run dev
+# or for full functions locally:
+npm i -g netlify-cli
+netlify dev
 ```
-
-Visit http://localhost:5173
-
-> Functions are deployed on Netlify. For local function testing, use Netlify CLI (`netlify dev`).
-
-## Notes
-
-- The ingest function fetches RSS via `https://api.allorigins.win/raw?...` to avoid CORS from origin sites.
-- Items are deduplicated by `link` and capped to the most recent 20,000 per topic.
-- You can adjust topics in `netlify/functions/ingest.mjs` and the UI titles/colors in `src/App.jsx`.
-
-Enjoy!

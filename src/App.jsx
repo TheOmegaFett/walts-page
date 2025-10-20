@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-const AU_PARAMS = "hl=en-AU&gl=AU&ceid=AU:en"; // reserved for future server filtering if needed
-
 const TOPICS = [
   { key: "ufos", title: "UFOs / UAP", color: "var(--tag-purple)" },
   { key: "financials", title: "Financials", color: "var(--tag-green)" },
@@ -68,7 +66,6 @@ function FeedColumn({ topic, pollEveryMs = 60000, initialReveal = 30, revealStep
           const newCount = head.total - total;
           setTotal(head.total);
           if (atTopRef.current) {
-            // refresh top slice
             setItems(head.items);
             setVisibleCount(head.items.length);
           } else {
@@ -90,7 +87,6 @@ function FeedColumn({ topic, pollEveryMs = 60000, initialReveal = 30, revealStep
       atTopRef.current = el.scrollTop < 16;
       const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 200;
       if (nearBottom && nextCursor !== null) {
-        // load more
         (async () => {
           try {
             const data = await fetchSlice(topic.key, nextCursor, revealStep);
