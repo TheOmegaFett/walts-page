@@ -7,12 +7,13 @@ const AU_PARAMS = "hl=en-AU&gl=AU&ceid=AU:en";
 const IS_DEV =
   typeof location !== "undefined" && location.hostname === "localhost";
 
-// Google News RSS builder
+const PROXY = import.meta.env.VITE_PROXY_ORIGIN || "";
 const g = (q) => {
-  const qs = `rss/search?q=${encodeURIComponent(q)}&${AU_PARAMS}`;
-  return IS_DEV ? `/gn/${qs}` : `https://news.google.com/${qs}`;
+  const path = `rss/search?q=${encodeURIComponent(q)}&${AU_PARAMS}`;
+  // Always go through proxy in production; in dev you can still use Vite /gn proxy if you like
+  if (IS_DEV && !PROXY) return `/gn/${path}`;
+  return `${PROXY}/gn/${path}`;
 };
-
 // Topic colors
 const COLORS = {
   ufos: "var(--tag-purple)",
@@ -110,26 +111,16 @@ const pageProxies = [
 ];
 
 async function fetchHTML(url, timeoutMs = 12000) {
-  const attempt = async (finalUrl) => {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), timeoutMs);
-    try {
-      const res = await fetch(finalUrl, { signal: ctrl.signal });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.text();
-    } finally {
-      clearTimeout(t);
-    }
-  };
-  let lastErr;
-  for (const fn of pageProxies) {
-    try {
-      return await attempt(fn(url));
-    } catch (e) {
-      lastErr = e;
-    }
+  const proxied = `${PROXY}/page?url=${encodeURIComponent(url)}`;
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(proxied, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.text();
+  } finally {
+    clearTimeout(t);
   }
-  throw lastErr || new Error("All page proxies failed");
 }
 
 /* =========================
